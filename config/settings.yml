@@ -1,0 +1,26 @@
+app:
+  title: "Monitorovanie kvality vzdelávania FEI TUKE"
+  caption: "Systém analýzy ukazovateľov vstupu do vzdelávania (Čl. III)"
+  theme: "dark"
+
+data:
+  raw_folder: "data/raw"
+
+faculty_default: "FEI"
+
+auth:
+  ldap:
+    enabled: false
+    server_uri: "ldap://ldap.tuke.sk"
+    user_dn_template: "uid={username},ou=People,dc=tuke,dc=sk"
+    use_ssl: false
+    connect_timeout: 5
+
+  local_users:
+    admin:
+      password: "admin"
+      role: "admin"
+
+    teacher:
+      password: "teacher"
+      role: "teacher"

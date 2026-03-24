@@ -1,0 +1,341 @@
+III_a:
+  db_code: "a"
+  short: "počet ponúkaných ŠP"
+  name: "počet ponúkaných ŠP podľa 1., 2., 3. stupňa vzdelávania"
+  unit: "count"
+  level: "area"
+  category: "Čl. III"
+
+III_b:
+  db_code: "b"
+  short: "podiel neotvorených ŠP"
+  name: "podiel neotvorených ŠP v akademickom roku z celkovej ponuky"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. III"
+
+III_c:
+  db_code: "c"
+  short: "počet ŠP v cudzom jazyku"
+  name: "počet ponúkaných ŠP v inom ako slovenskom jazyku"
+  unit: "count"
+  level: "area"
+  category: "Čl. III"
+
+III_d:
+  db_code: "d"
+  short: "podiel neotvorených cudzojazyčných ŠP"
+  name: "podiel neotvorených ŠP v inom ako slovenskom jazyku v akademickom roku z ich celkovej ponuky"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. III"
+
+III_e:
+  db_code: "e"
+  short: "počet uchádzačov"
+  name: "počet uchádzačov o štúdium v príslušnom akademickom roku"
+  unit: "count"
+  level: "program"
+  category: "Čl. III"
+
+III_f:
+  db_code: "f"
+  short: "počet zahraničných uchádzačov"
+  name: "počet uchádzačov o štúdium v príslušnom akademickom roku s iným ako slovenským občianstvom"
+  unit: "count"
+  level: "program"
+  category: "Čl. III"
+
+III_g:
+  db_code: "g"
+  short: "podiel zapísaných študentov"
+  name: "podiel zapísaných študentov zo všetkých prihlásených záujemcov o štúdium v príslušnom akademickom roku"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. III"
+
+III_h:
+  db_code: "h"
+  short: "podiel prijatých prestupujúcich"
+  name: "podiel prijatých študentov z iných vysokých škôl v 2. a 3. stupni vzdelávania"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. III"
+
+IV1_a:
+  db_code: "IV_a"
+  short: "počet študentov podľa ročníkov"
+  name: "počet študentov TUKE/ŠP v jednotlivých rokoch štúdia"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 1"
+  has_study_year: true
+  has_snapshot: true
+
+IV1_b:
+  db_code: "IV_b"
+  short: "podiel predčasného ukončenia 1. roč."
+  name: "podiel študentov prvého roku štúdia, ktorí predčasne ukončili štúdium po ZS/LS"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 1"
+  has_sub_type: true
+  has_snapshot: true
+
+IV1_c:
+  db_code: "IV_c"
+  short: "miera predčasného ukončenia štúdia"
+  name: "miera predčasného ukončenia štúdia (okrem 1. ročníka)"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 1"
+  has_sub_type: true
+  has_snapshot: true
+
+IV1_d:
+  db_code: "IV_d"
+  short: "podiel zahraničných študentov"
+  name: "podiel zahraničných študentov z celkového počtu študentov"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. IV - 1"
+  has_study_year: true
+  has_snapshot: true
+
+IV1_e:
+  db_code: "IV_e"
+  short: "podiel cudzincov"
+  name: "podiel študentov s iným ako slovenským občianstvom"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. IV - 1"
+  has_snapshot: true
+
+IV1_f:
+  db_code: "IV_f"
+  short: "počet nad štandardnou dĺžkou"
+  name: "počet študentov prekračujúcich štandardnú dĺžku štúdia"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 1"
+
+IV1_g:
+  db_code: "IV_g"
+  short: "počet akad. podvodov / plagiátov"
+  name: "počet odhalených akademických podvodov, z toho počet plagiátov"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 1"
+  has_sub_type: true
+
+IV1_h:
+  db_code: "IV_h"
+  short: "počet disciplinárnych konaní"
+  name: "počet disciplinárnych konaní (vylúčenie zo štúdia, napomenutie, pod.)"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 1"
+
+IV1_i:
+  db_code: "IV_i"
+  short: "počet absolventov"
+  name: "počet absolventov"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 1"
+
+
+# ── Čl. IV sekcia 2 — Podpora študentov ──────────────────────────────────────
+
+IV2_a:
+  db_code: "IV2_a"
+  short: "pomer počtu študentov a učiteľov"
+  name: "pomer počtu študentov a učiteľov"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 2"
+  has_sub_type: true
+
+IV2_b:
+  db_code: "IV2_b"
+  short: "počet záverečných prác / vedúci"
+  name: "počet záverečných prác vedených vedúcim záverečnej práce"
+  unit: "mixed"
+  level: "program"
+  category: "Čl. IV - 2"
+  has_sub_type: true
+
+IV2_c:
+  db_code: "IV2_c"
+  short: "podiel vyslaných na mobility"
+  name: "podiel vyslaných študentov na mobility do zahraničia z celkového počtu študentov"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_d:
+  db_code: "IV2_d"
+  short: "počet prijatých na mobilitu zo zahraničia"
+  name: "počet prijatých študentov na mobility zo zahraničia v príslušnom akademickom roku"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_e:
+  db_code: "IV2_e"
+  short: "rozsah podpory kariérneho poradenstva"
+  name: "rozsah podpory a služieb kariérneho poradenstva (odhadované v hodinách na študenta)"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_f:
+  db_code: "IV2_f"
+  short: "počet zamestnancov na podporu študentov"
+  name: "počet zamestnancov so zameraním na podporu študentov (študijné a kariérne poradenstvo)"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_g:
+  db_code: "IV2_g"
+  short: "podiel zapojených do hodnotenia"
+  name: "podiel študentov, ktorí sa zapojili do hodnotenia kvality vzdelávania"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 2"
+  has_sub_type: true
+
+IV2_h:
+  db_code: "IV2_h"
+  short: "miera spokojnosti s kvalitou výučby"
+  name: "miera spokojnosti študentov s kvalitou výučby a učiteľov"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_i:
+  db_code: "IV2_i"
+  short: "miera spokojnosti so špecifickými potrebami"
+  name: "miera spokojnosti študentov so špecifickými potrebami"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. IV - 2"
+  has_sub_type: false
+
+IV2_j:
+  db_code: "IV2_j"
+  short: "počet podnetov študentov"
+  name: "počet podaných podnetov študentov"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 2"
+  has_sub_type: true
+
+
+# ── Čl. IV sekcia 3 — Učitelia ────────────────────────────────────────────────
+
+IV3_a:
+  db_code: "IV3_a"
+  short: "počty učiteľov podľa hodností"
+  name: "počty všetkých učiteľov na ŠP podľa vedecko-pedagogických hodností"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: true
+
+IV3_b:
+  db_code: "IV3_b"
+  short: "počty výskumných pracovníkov"
+  name: "počty samostatných výskumných pracovníkov na ŠP"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_c:
+  db_code: "IV3_c"
+  short: "počet učiteľov s titulom prof./doc."
+  name: "počet učiteľov s vedecko-pedagogickým titulom (prof., doc.)"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_d:
+  db_code: "IV3_d"
+  short: "podiel učiteľov s PhD./ArtD."
+  name: "podiel učiteľov s PhD./ArtD. (alebo ekvivalentom)"
+  unit: "ratio"
+  level: "area"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_e:
+  db_code: "IV3_e"
+  short: "vek učiteľov ŠP"
+  name: "vek učiteľov ŠP zabezpečujúcich profilové predmety"
+  unit: "count"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: true
+
+IV3_f:
+  db_code: "IV3_f"
+  short: "podiel učiteľov – absolventov fakulty"
+  name: "podiel učiteľov – absolventov fakulty"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_g:
+  db_code: "IV3_g"
+  short: "podiel učiteľov – výskumných pracovníkov"
+  name: "podiel učiteľov, ktorí sú zároveň výskumnými pracovníkmi"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_h:
+  db_code: "IV3_h"
+  short: "podiel učiteľov s praxou mimo akademickej sféry"
+  name: "podiel učiteľov s praxou v relevantnej oblasti mimo akademickej sféry"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_i:
+  db_code: "IV3_i"
+  short: "počet prijatých učiteľov"
+  name: "počet prijatých učiteľov zo zahraničia alebo iných VŠ"
+  unit: "count"
+  level: "area"
+  category: "Čl. IV - 3"
+  has_sub_type: false
+
+IV3_j:
+  db_code: "IV3_j"
+  short: "podiel vyslaných učiteľov / súčet"
+  name: "podiel vyslaných učiteľov / pomocné počty do vzorca"
+  unit: "mixed"
+  level: "program"
+  category: "Čl. IV - 3"
+  has_sub_type: true
+
+
+V_a:
+  db_code: "V5_a"
+  short: "miera uplatniteľnosti absolventov"
+  name: "miera uplatniteľnosti absolventov TUKE/ŠP"
+  unit: "ratio"
+  level: "program"
+  category: "Čl. V"
+  has_sub_type: true

@@ -1,0 +1,7 @@
+data/app.db
+data/raw/
+data/processed/
+data/exports/
+__pycache__/
+*.pyc
+.env
