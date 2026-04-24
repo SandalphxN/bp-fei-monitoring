@@ -18,7 +18,7 @@ auth:
 
   local_users:
     admin:
-      password: "admin"
+      password: "GDeuCv!xHMGX#3T8"
       role: "admin"
 
     teacher:

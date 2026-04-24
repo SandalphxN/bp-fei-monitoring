@@ -208,7 +208,7 @@ def _build_indicator_selector(all_indicators: dict) -> str:
         subsection_key = list(subsections.keys())[0]
     else:
         subsection_key = st.sidebar.selectbox(
-            "Podsekcia:",
+            "Podčasť:",
             list(subsections.keys()),
             key="ind_subsection",
         )
@@ -234,7 +234,7 @@ def _get_programs(df: pd.DataFrame, db_code: str, areas: list) -> list:
         sub = sub[sub["area"].isin(areas)]
     return sorted(sub["program"].unique().tolist())
 
-def _render_iv2_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv2_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     from src.analytics.aggregations import get_programs_for_area
 
     non_fei = [a for a in selected_areas if a != "FEI"]
@@ -260,7 +260,7 @@ def _render_iv2_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
     selected_sub = "Bc a Ing k 31.10"
     if not selected_programs and not sel_all:
         snap_choice = st.radio(
-            "Zríz dát:",
+            "Termín dát:",
             ["Začiatok ZS", "Koniec ZS (len pre 1. ročník, Bc)"],
             horizontal=True, key="iv2_a_snap"
         )
@@ -271,11 +271,12 @@ def _render_iv2_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
         selected_sub_types=[selected_sub],
         selected_programs=selected_programs or None,
         show_years=multiple_years,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_b(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv2_b(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     from src.analytics.aggregations import get_programs_for_area
 
     df_g = df[(df["indicator_code"] == "IV2_b") & (df["area"].isin(selected_areas))]
@@ -312,11 +313,12 @@ def _render_iv2_b(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
         selected_sub_types=selected_subs or None,
         selected_programs=selected_programs or None,
         show_years=multiple_years,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_c(df, selected_areas, multiple_years):
+def _render_iv2_c(df, selected_areas, multiple_years, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -330,21 +332,21 @@ def _render_iv2_c(df, selected_areas, multiple_years):
         with col2:
             selected_programs = programs_all if sel_all else st.multiselect(
                 "Študijné programy:", programs_all, default=[], key="iv2_c_programs")
-    fig = plot_iv2_c(df, selected_areas, selected_programs or None, show_years=multiple_years)
+    fig = plot_iv2_c(df, selected_areas, selected_programs or None, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_d(df, selected_areas, multiple_years):
-    fig = plot_iv2_d(df, selected_areas, show_years=multiple_years)
+def _render_iv2_d(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv2_d(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_e(df, selected_areas, multiple_years):
-    fig = plot_iv2_e(df, selected_areas, show_years=multiple_years)
+def _render_iv2_e(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv2_e(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_f(df, selected_areas, multiple_years):
+def _render_iv2_f(df, selected_areas, multiple_years, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -358,11 +360,11 @@ def _render_iv2_f(df, selected_areas, multiple_years):
         with col2:
             selected_programs = programs_all if sel_all else st.multiselect(
                 "Študijné programy:", programs_all, default=[], key="iv2_f_programs")
-    fig = plot_iv2_f(df, selected_areas, selected_programs or None, show_years=multiple_years)
+    fig = plot_iv2_f(df, selected_areas, selected_programs or None, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_g(df, selected_areas, multiple_years):
+def _render_iv2_g(df, selected_areas, multiple_years, chart_type):
     col1, col2 = st.columns([1, 2])
     with col1:
         df_g = df[(df["indicator_code"] == "IV2_g") & (df["area"].isin(selected_areas))]
@@ -374,7 +376,7 @@ def _render_iv2_g(df, selected_areas, multiple_years):
         )
     with col2:
         snap_choice = st.radio(
-            "Obdobie:", ["ak.rok", "ZS", "LS"],
+            "Termín:", ["ak.rok", "ZS", "LS"],
             horizontal=True, key="iv2_g_snap"
         )
 
@@ -404,27 +406,29 @@ def _render_iv2_g(df, selected_areas, multiple_years):
         selected_snapshot=snap_choice,
         selected_programs=selected_programs or None,
         show_years=multiple_years,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_h(df, selected_areas, multiple_years):
+def _render_iv2_h(df, selected_areas, multiple_years, chart_type):
     snap_choice = st.radio(
-        "Obdobie:", ["ak.rok", "ZS", "LS"],
+        "Termín:", ["ak.rok", "ZS", "LS"],
         horizontal=True, key="iv2_h_snap"
     )
     fig = plot_iv2_h(df, selected_areas,
                      selected_snapshot=snap_choice,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_i(df, selected_areas, multiple_years):
-    fig = plot_iv2_i(df, show_years=multiple_years)
+def _render_iv2_i(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv2_i(df, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv2_j(df, selected_areas, multiple_years):
+def _render_iv2_j(df, selected_areas, multiple_years, chart_type):
     df_j = df[(df["indicator_code"] == "IV2_j")]
     all_subs = ["spolu", "študentský senát", "študijné oddelenie", "študijní poradcovia"]
     available_subs = [s for s in all_subs if s in df_j["sub_type"].dropna().unique()]
@@ -434,11 +438,12 @@ def _render_iv2_j(df, selected_areas, multiple_years):
     )
     fig = plot_iv2_j(df,
                      selected_sub_types=selected_subs or None,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_a(df, selected_areas, multiple_years):
+def _render_iv3_a(df, selected_areas, multiple_years, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -475,16 +480,17 @@ def _render_iv3_a(df, selected_areas, multiple_years):
     fig = plot_iv3_a(df, selected_areas,
                      selected_sub_types=selected_subs,
                      selected_programs=selected_programs or None,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_b(df, selected_areas, multiple_years):
-    fig = plot_iv3_b(df, selected_areas, show_years=multiple_years)
+def _render_iv3_b(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv3_b(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_c(df, selected_areas, multiple_years):
+def _render_iv3_c(df, selected_areas, multiple_years, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -507,16 +513,17 @@ def _render_iv3_c(df, selected_areas, multiple_years):
 
     fig = plot_iv3_c(df, selected_areas,
                      selected_programs=selected_programs or None,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_d(df, selected_areas, multiple_years):
-    fig = plot_iv3_d(df, selected_areas, show_years=multiple_years)
+def _render_iv3_d(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv3_d(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_e(df, selected_areas, multiple_years):
+def _render_iv3_e(df, selected_areas, multiple_years, chart_type):
     df_e = df[(df["indicator_code"] == "IV3_e") & (df["area"].isin(selected_areas))]
     available_subs = [s for s in ["priemer", "od", "do"]
                       if s in df_e["sub_type"].dropna().unique()]
@@ -548,11 +555,12 @@ def _render_iv3_e(df, selected_areas, multiple_years):
     fig = plot_iv3_e(df, selected_areas,
                      selected_sub_types=selected_subs or None,
                      selected_programs=selected_programs or None,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_ratio(df, selected_areas, multiple_years, code, plot_func):
+def _render_iv3_ratio(df, selected_areas, multiple_years, code, plot_func, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -575,28 +583,29 @@ def _render_iv3_ratio(df, selected_areas, multiple_years, code, plot_func):
 
     fig = plot_func(df, selected_areas,
                     selected_programs=selected_programs or None,
-                    show_years=multiple_years)
+                    show_years=multiple_years,
+                    chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_f(df, selected_areas, multiple_years):
-    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_f", plot_iv3_f)
+def _render_iv3_f(df, selected_areas, multiple_years, chart_type):
+    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_f", plot_iv3_f, chart_type)
 
 
-def _render_iv3_g(df, selected_areas, multiple_years):
-    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_g", plot_iv3_g)
+def _render_iv3_g(df, selected_areas, multiple_years, chart_type):
+    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_g", plot_iv3_g, chart_type)
 
 
-def _render_iv3_h(df, selected_areas, multiple_years):
-    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_h", plot_iv3_h)
+def _render_iv3_h(df, selected_areas, multiple_years, chart_type):
+    _render_iv3_ratio(df, selected_areas, multiple_years, "IV3_h", plot_iv3_h, chart_type)
 
 
-def _render_iv3_i(df, selected_areas, multiple_years):
-    fig = plot_iv3_i(df, selected_areas, show_years=multiple_years)
+def _render_iv3_i(df, selected_areas, multiple_years, chart_type):
+    fig = plot_iv3_i(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv3_j(df, selected_areas, multiple_years):
+def _render_iv3_j(df, selected_areas, multiple_years, chart_type):
     sub_choice = st.radio(
         "Typ údajov:", ["vyslaní", "súčet"],
         horizontal=True, key="iv3_j_sub"
@@ -627,11 +636,12 @@ def _render_iv3_j(df, selected_areas, multiple_years):
     fig = plot_iv3_j(df, selected_areas,
                      selected_sub_type=sub_choice,
                      selected_programs=selected_programs or None,
-                     show_years=multiple_years)
+                     show_years=multiple_years,
+                     chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_v5_a(df, selected_areas, multiple_years):
+def _render_v5_a(df, selected_areas, multiple_years, chart_type):
     non_fei = [a for a in selected_areas if a != "FEI"]
     programs_all = []
     for area in non_fei:
@@ -654,10 +664,11 @@ def _render_v5_a(df, selected_areas, multiple_years):
 
     fig = plot_v5_a(df, selected_areas,
                     selected_programs=selected_programs or None,
-                    show_years=multiple_years)
+                    show_years=multiple_years,
+                    chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
-def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     selected_rocnik = st.selectbox(
         "Ročník:",
         ["všetci", "1r", "2r", "3r", "4r", "5r"],
@@ -667,7 +678,7 @@ def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
     snapshot_type = "ZS"
     if selected_rocnik == "1r":
         snapshot_choice = st.radio(
-            "Zríz dát:",
+            "Termín dát:",
             ["Začiatok ZS", "Koniec ZS"],
             horizontal=True,
             key="iv_a_snapshot",
@@ -698,6 +709,7 @@ def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
             snapshot_type=snapshot_type,
             selected_programs=selected_programs,
             show_years=multiple_years,
+            chart_type=chart_type,
         )
     else:
         fig = plot_iv_a(
@@ -705,22 +717,23 @@ def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
             snapshot_type=snapshot_type,
             show_years=multiple_years,
             selected_rocnik=selected_rocnik,
+            chart_type=chart_type,
         )
 
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_iv_bc(df: pd.DataFrame, ind_code: str, ind_name: str,
-                  selected_areas: list, multiple_years: bool):
+                  selected_areas: list, multiple_years: bool, chart_type: str):
     col1, col2 = st.columns([2, 3])
 
     with col1:
         if ind_code == "IV_c":
             semester = "ZS"
-            st.markdown("**Semester:** ZS")
+            st.markdown("**Termín:** ZS")
         else:
             semester = st.radio(
-                "Semester:",
+                "Termín:",
                 ["ZS", "LS"],
                 horizontal=True,
                 key=f"{ind_code}_semester",
@@ -744,11 +757,12 @@ def _render_iv_bc(df: pd.DataFrame, ind_code: str, ind_name: str,
         selected_sub_types=selected_sub or None,
         show_programmes=False,
         show_years=multiple_years,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_d(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_d(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     selected_rocnik = st.selectbox(
         "Ročník:",
         ["všetci", "1r", "2r", "3r", "4r", "5r"],
@@ -758,31 +772,33 @@ def _render_iv_d(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
     snapshot_type = "ZS"
     if selected_rocnik == "1r":
         snap_choice = st.radio(
-            "Zríz dát:", ["Začiatok ZS", "Koniec ZS"],
+            "Termín dát:", ["Začiatok ZS", "Koniec ZS"],
             horizontal=True, key="iv_d_snap"
         )
         snapshot_type = "ZS" if snap_choice == "Začiatok ZS" else "LS"
 
     fig = plot_iv_d(df, selected_areas, snapshot_type=snapshot_type,
-                    show_years=multiple_years, selected_rocnik=selected_rocnik)
+                    show_years=multiple_years, selected_rocnik=selected_rocnik,
+                    chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_e(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_e(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     col1, col2 = st.columns([2, 3])
     with col1:
         snap_choice = st.radio(
-            "Zríz dát:",
+            "Termín dát:",
             ["Začiatok ZS", "Koniec ZS (len 1. ročník, Bc)"],
             horizontal=False,
             key="iv_e_snap"
         )
     snapshot_type = "ZS" if snap_choice == "Začiatok ZS" else "LS"
-    fig = plot_iv_e(df, selected_areas, snapshot_type=snapshot_type, show_years=multiple_years)
+    fig = plot_iv_e(df, selected_areas, snapshot_type=snapshot_type,
+                    show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_f(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_f(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     selected_programs = []
     if any(a != "FEI" for a in selected_areas):
         df_ivf = df[(df["indicator_code"] == "IV_f") & (df["program"].notna())]
@@ -800,11 +816,12 @@ def _render_iv_f(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
                     )
     fig = plot_iv_f(df, selected_areas,
                     show_years=multiple_years,
-                    selected_programs=selected_programs or None)
+                    selected_programs=selected_programs or None,
+                    chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_g(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_g(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     df_g = df[(df["indicator_code"] == "IV_g") & (df["area"].isin(selected_areas))]
 
     available_subtypes = [s for s in [
@@ -827,16 +844,17 @@ def _render_iv_g(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
         df, selected_areas,
         selected_sub_types=selected_sub or None,
         show_years=multiple_years,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_h(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
-    fig = plot_iv_h(df, selected_areas, show_years=multiple_years)
+def _render_iv_h(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
+    fig = plot_iv_h(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
-def _render_iv_i(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
+def _render_iv_i(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
     selected_programs = []
     if any(a != "FEI" for a in selected_areas):
         df_i = df[(df["indicator_code"] == "IV_i") & (df["program"].notna())]
@@ -859,6 +877,7 @@ def _render_iv_i(df: pd.DataFrame, selected_areas: list, multiple_years: bool):
         df, selected_areas,
         show_years=multiple_years,
         selected_programs=selected_programs or None,
+        chart_type=chart_type,
     )
     st.plotly_chart(fig, use_container_width=True)
 
@@ -996,6 +1015,22 @@ def main():
     st.sidebar.subheader("Ukazovatel")
     selected_indicator = _build_indicator_selector(all_indicators)
 
+    # ── GLOBAL CHART TYPE SELECTOR ────────────────────────────────────────────
+    st.sidebar.markdown("---")
+    st.sidebar.subheader("Typ grafu")
+    if multiple_years:
+        chart_type = st.sidebar.radio(
+            "Zobrazenie:",
+            ["Stĺpcový", "Čiarový"],
+            index=0,
+            key="global_chart_type",
+            help="Stĺpcový: klasické stĺpce. Čiarový: trendové línie — x-os = roky, každá línia = odbor/program.",
+        )
+    else:
+        chart_type = "Stĺpcový"
+        st.sidebar.caption("💡 Čiarový graf je dostupný pri výbere 2+ rokov.")
+    # ─────────────────────────────────────────────────────────────────────────
+
     db_code = db_code_map.get(selected_indicator, selected_indicator)
 
     df_filtered = df[df["area"].isin(selected_areas)].copy()
@@ -1013,61 +1048,61 @@ def main():
     with tab1:
         if is_iv2 and not is_iv3:
             if db_code == "IV2_a":
-                _render_iv2_a(df_filtered, selected_areas, multiple_years)
+                _render_iv2_a(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_b":
-                _render_iv2_b(df_filtered, selected_areas, multiple_years)
+                _render_iv2_b(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_c":
-                _render_iv2_c(df_filtered, selected_areas, multiple_years)
+                _render_iv2_c(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_d":
-                _render_iv2_d(df_filtered, selected_areas, multiple_years)
+                _render_iv2_d(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_e":
-                _render_iv2_e(df_filtered, selected_areas, multiple_years)
+                _render_iv2_e(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_f":
-                _render_iv2_f(df_filtered, selected_areas, multiple_years)
+                _render_iv2_f(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_g":
-                _render_iv2_g(df_filtered, selected_areas, multiple_years)
+                _render_iv2_g(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_h":
-                _render_iv2_h(df_filtered, selected_areas, multiple_years)
+                _render_iv2_h(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_i":
-                _render_iv2_i(df_filtered, selected_areas, multiple_years)
+                _render_iv2_i(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV2_j":
-                _render_iv2_j(df_filtered, selected_areas, multiple_years)
+                _render_iv2_j(df_filtered, selected_areas, multiple_years, chart_type)
 
         elif db_code.startswith("V5_"):
             if db_code == "V5_a":
-                _render_v5_a(df_filtered, selected_areas, multiple_years)
+                _render_v5_a(df_filtered, selected_areas, multiple_years, chart_type)
 
         elif is_iv3:
             if db_code == "IV3_a":
-                _render_iv3_a(df_filtered, selected_areas, multiple_years)
+                _render_iv3_a(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_b":
-                _render_iv3_b(df_filtered, selected_areas, multiple_years)
+                _render_iv3_b(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_c":
-                _render_iv3_c(df_filtered, selected_areas, multiple_years)
+                _render_iv3_c(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_d":
-                _render_iv3_d(df_filtered, selected_areas, multiple_years)
+                _render_iv3_d(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_e":
-                _render_iv3_e(df_filtered, selected_areas, multiple_years)
+                _render_iv3_e(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_f":
-                _render_iv3_f(df_filtered, selected_areas, multiple_years)
+                _render_iv3_f(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_g":
-                _render_iv3_g(df_filtered, selected_areas, multiple_years)
+                _render_iv3_g(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_h":
-                _render_iv3_h(df_filtered, selected_areas, multiple_years)
+                _render_iv3_h(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_i":
-                _render_iv3_i(df_filtered, selected_areas, multiple_years)
+                _render_iv3_i(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV3_j":
-                _render_iv3_j(df_filtered, selected_areas, multiple_years)
+                _render_iv3_j(df_filtered, selected_areas, multiple_years, chart_type)
 
         elif is_iv:
             if db_code == "IV_a":
-                _render_iv_a(df_filtered, selected_areas, multiple_years)
+                _render_iv_a(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV_d":
-                _render_iv_d(df_filtered, selected_areas, multiple_years)
+                _render_iv_d(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV_e":
-                _render_iv_e(df_filtered, selected_areas, multiple_years)
+                _render_iv_e(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV_f":
-                _render_iv_f(df_filtered, selected_areas, multiple_years)
+                _render_iv_f(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code in ("IV_b", "IV_c"):
                 _render_iv_bc(
                     df_filtered,
@@ -1075,13 +1110,14 @@ def main():
                     all_indicators[selected_indicator],
                     selected_areas,
                     multiple_years,
+                    chart_type,
                 )
             elif db_code == "IV_g":
-                _render_iv_g(df_filtered, selected_areas, multiple_years)
+                _render_iv_g(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV_h":
-                _render_iv_h(df_filtered, selected_areas, multiple_years)
+                _render_iv_h(df_filtered, selected_areas, multiple_years, chart_type)
             elif db_code == "IV_i":
-                _render_iv_i(df_filtered, selected_areas, multiple_years)
+                _render_iv_i(df_filtered, selected_areas, multiple_years, chart_type)
 
         else:
             prog_indicator_codes = [
@@ -1124,6 +1160,7 @@ def main():
                     selected_areas,
                     iii_selected_programs,
                     show_years=multiple_years,
+                    chart_type=chart_type,
                 )
                 st.plotly_chart(fig, use_container_width=True)
             else:
@@ -1132,6 +1169,7 @@ def main():
                     db_code,
                     all_indicators[selected_indicator],
                     show_years=multiple_years,
+                    chart_type=chart_type,
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -1175,7 +1213,7 @@ def main():
             "indicator_code": "Kód",
             "indicator_name": "Ukazovateľ",
             "sub_type": "Typ",
-            "snapshot_type": "Zríz",
+            "snapshot_type": "Termín",
             "study_year": "Ročník",
             "formatted_value": "Hodnota",
         }

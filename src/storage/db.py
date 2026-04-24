@@ -1,90 +1,159 @@
 import os
-import sqlite3
 from typing import List, Optional
 
 import pandas as pd
 
-DB_PATH = os.path.join(os.getcwd(), "data", "app.db")
+# ── Підключення: PostgreSQL (Render) або SQLite (локально) ────────────────────
+
+DATABASE_URL = os.environ.get("DATABASE_URL")
+
+if DATABASE_URL:
+    import psycopg2
+    import psycopg2.extras
+
+    def _get_conn():
+        # Render дає URL з "postgres://", psycopg2 потребує "postgresql://"
+        url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
+        return psycopg2.connect(url)
+
+    PLACEHOLDER = "%s"
+    _IS_PG = True
+else:
+    import sqlite3
+
+    DB_PATH = os.path.join(os.getcwd(), "data", "app.db")
+
+    def _get_conn():
+        os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
+        conn = sqlite3.connect(DB_PATH)
+        conn.execute("PRAGMA foreign_keys = ON")
+        return conn
+
+    PLACEHOLDER = "?"
+    _IS_PG = False
 
 
-def _get_conn():
-    os.makedirs(os.path.dirname(DB_PATH), exist_ok=True)
-    conn = sqlite3.connect(DB_PATH)
-    conn.execute("PRAGMA foreign_keys = ON")
-    return conn
+def _execute(conn, sql: str, params=()) -> None:
+    """Виконати SQL без результату."""
+    sql = sql.replace("?", PLACEHOLDER)
+    conn.cursor().execute(sql, params)
 
+
+def _executemany(conn, sql: str, rows) -> None:
+    sql = sql.replace("?", PLACEHOLDER)
+    conn.cursor().executemany(sql, rows)
+
+
+def _fetchall(conn, sql: str, params=()):
+    sql = sql.replace("?", PLACEHOLDER)
+    cur = conn.cursor()
+    cur.execute(sql, params)
+    return cur.fetchall()
+
+
+# ── Ініціалізація схеми ───────────────────────────────────────────────────────
 
 def init_db():
     conn = _get_conn()
     c = conn.cursor()
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS uploads (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            faculty TEXT NOT NULL,
-            year INTEGER NOT NULL,
-            filename TEXT NOT NULL,
-            content BLOB,
-            uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    """)
-    c.execute("""
-        CREATE TABLE IF NOT EXISTS records (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            upload_id INTEGER NOT NULL,
-            year INTEGER,
-            year_display TEXT,
-            faculty TEXT,
-            area TEXT,
-            area_type TEXT,
-            degree TEXT,
-            indicator_code TEXT,
-            indicator_name TEXT,
-            value REAL,
-            is_percentage INTEGER,
-            category TEXT,
-            program TEXT,
-            sub_type TEXT,
-            snapshot_type TEXT,
-            study_year TEXT,
-            FOREIGN KEY (upload_id) REFERENCES uploads(id) ON DELETE CASCADE
-        )
-    """)
-    for col, col_type in [
-        ("sub_type", "TEXT"),
-        ("snapshot_type", "TEXT"),
-        ("study_year", "TEXT"),
-    ]:
-        try:
-            c.execute(f"ALTER TABLE records ADD COLUMN {col} {col_type}")
-        except sqlite3.OperationalError:
-            pass
-    c.execute("""
-        DELETE FROM records
-        WHERE indicator_code = 'IV_g'
-          AND sub_type IN ('spolu', 'plagiáty', 'plagiáty - Progr')
-    """)
-    c.execute("""
-        DELETE FROM records
-        WHERE indicator_code = 'IV_g'
-          AND sub_type NOT IN (
-            'akademické podvody spolu', 'podvody', 'plagiáty spolu',
-            'plagiáty - záverečné práce', 'plagiáty - ZAP', 'plagiáty - OOP'
-          )
-          AND sub_type IS NOT NULL
-    """)
+
+    if _IS_PG:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS uploads (
+                id SERIAL PRIMARY KEY,
+                faculty TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                content BYTEA,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS records (
+                id SERIAL PRIMARY KEY,
+                upload_id INTEGER NOT NULL REFERENCES uploads(id) ON DELETE CASCADE,
+                year INTEGER,
+                year_display TEXT,
+                faculty TEXT,
+                area TEXT,
+                area_type TEXT,
+                degree TEXT,
+                indicator_code TEXT,
+                indicator_name TEXT,
+                value REAL,
+                is_percentage INTEGER,
+                category TEXT,
+                program TEXT,
+                sub_type TEXT,
+                snapshot_type TEXT,
+                study_year TEXT
+            )
+        """)
+    else:
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS uploads (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                faculty TEXT NOT NULL,
+                year INTEGER NOT NULL,
+                filename TEXT NOT NULL,
+                content BLOB,
+                uploaded_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+        c.execute("""
+            CREATE TABLE IF NOT EXISTS records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                upload_id INTEGER NOT NULL,
+                year INTEGER,
+                year_display TEXT,
+                faculty TEXT,
+                area TEXT,
+                area_type TEXT,
+                degree TEXT,
+                indicator_code TEXT,
+                indicator_name TEXT,
+                value REAL,
+                is_percentage INTEGER,
+                category TEXT,
+                program TEXT,
+                sub_type TEXT,
+                snapshot_type TEXT,
+                study_year TEXT,
+                FOREIGN KEY (upload_id) REFERENCES uploads(id) ON DELETE CASCADE
+            )
+        """)
+        # Pridaj stĺpce ak chýbajú (pre staré SQLite DB)
+        for col, col_type in [
+            ("sub_type", "TEXT"),
+            ("snapshot_type", "TEXT"),
+            ("study_year", "TEXT"),
+        ]:
+            try:
+                c.execute(f"ALTER TABLE records ADD COLUMN {col} {col_type}")
+            except Exception:
+                pass
 
     conn.commit()
     conn.close()
 
 
+# ── CRUD operácie ─────────────────────────────────────────────────────────────
+
 def insert_upload(faculty: str, year: int, filename: str, content: bytes) -> int:
     conn = _get_conn()
     c = conn.cursor()
-    c.execute(
-        "INSERT INTO uploads (faculty, year, filename, content) VALUES (?, ?, ?, ?)",
-        (faculty, year, filename, content),
-    )
-    upload_id = c.lastrowid
+    if _IS_PG:
+        c.execute(
+            "INSERT INTO uploads (faculty, year, filename, content) VALUES (%s, %s, %s, %s) RETURNING id",
+            (faculty, year, filename, psycopg2.Binary(content)),
+        )
+        upload_id = c.fetchone()[0]
+    else:
+        c.execute(
+            "INSERT INTO uploads (faculty, year, filename, content) VALUES (?, ?, ?, ?)",
+            (faculty, year, filename, content),
+        )
+        upload_id = c.lastrowid
     conn.commit()
     conn.close()
     return upload_id
@@ -112,13 +181,15 @@ def insert_records(upload_id: int, df: pd.DataFrame):
             row.get("snapshot_type"),
             row.get("study_year"),
         ))
-    conn.executemany("""
+    ph = PLACEHOLDER
+    sql = f"""
         INSERT INTO records (
             upload_id, year, year_display, faculty, area, area_type, degree,
             indicator_code, indicator_name, value, is_percentage, category,
             program, sub_type, snapshot_type, study_year
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    """, rows)
+        ) VALUES ({ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph},{ph})
+    """
+    conn.cursor().executemany(sql, rows)
     conn.commit()
     conn.close()
 
@@ -126,13 +197,11 @@ def insert_records(upload_id: int, df: pd.DataFrame):
 def delete_records_for_year(faculty: str, year: int):
     conn = _get_conn()
     c = conn.cursor()
-    c.execute(
-        "SELECT id FROM uploads WHERE faculty = ? AND year = ?",
-        (faculty, year),
-    )
+    ph = PLACEHOLDER
+    c.execute(f"SELECT id FROM uploads WHERE faculty = {ph} AND year = {ph}", (faculty, year))
     upload_ids = [row[0] for row in c.fetchall()]
     if upload_ids:
-        placeholders = ",".join("?" * len(upload_ids))
+        placeholders = ",".join([ph] * len(upload_ids))
         c.execute(f"DELETE FROM records WHERE upload_id IN ({placeholders})", upload_ids)
         c.execute(f"DELETE FROM uploads WHERE id IN ({placeholders})", upload_ids)
     conn.commit()
@@ -141,49 +210,51 @@ def delete_records_for_year(faculty: str, year: int):
 
 def delete_upload(upload_id: int):
     conn = _get_conn()
-    conn.execute("DELETE FROM records WHERE upload_id = ?", (upload_id,))
-    conn.execute("DELETE FROM uploads WHERE id = ?", (upload_id,))
+    ph = PLACEHOLDER
+    conn.cursor().execute(f"DELETE FROM records WHERE upload_id = {ph}", (upload_id,))
+    conn.cursor().execute(f"DELETE FROM uploads WHERE id = {ph}", (upload_id,))
     conn.commit()
     conn.close()
 
 
 def get_years(faculty: Optional[str] = None) -> List[int]:
     conn = _get_conn()
+    ph = PLACEHOLDER
     if faculty:
-        rows = conn.execute(
-            "SELECT DISTINCT year FROM uploads WHERE faculty = ? ORDER BY year",
-            (faculty,),
-        ).fetchall()
+        rows = _fetchall(conn, f"SELECT DISTINCT year FROM uploads WHERE faculty = {ph} ORDER BY year", (faculty,))
     else:
-        rows = conn.execute(
-            "SELECT DISTINCT year FROM uploads ORDER BY year"
-        ).fetchall()
+        rows = _fetchall(conn, "SELECT DISTINCT year FROM uploads ORDER BY year")
     conn.close()
     return [r[0] for r in rows]
 
 
 def list_faculties() -> List[str]:
     conn = _get_conn()
-    rows = conn.execute(
-        "SELECT DISTINCT faculty FROM uploads ORDER BY faculty"
-    ).fetchall()
+    rows = _fetchall(conn, "SELECT DISTINCT faculty FROM uploads ORDER BY faculty")
     conn.close()
     return [r[0] for r in rows]
 
 
 def list_uploads() -> pd.DataFrame:
     conn = _get_conn()
-    df = pd.read_sql_query(
-        "SELECT id, faculty, year, filename, uploaded_at FROM uploads ORDER BY uploaded_at DESC",
-        conn,
-    )
+    if _IS_PG:
+        df = pd.read_sql_query(
+            "SELECT id, faculty, year, filename, uploaded_at FROM uploads ORDER BY uploaded_at DESC",
+            conn,
+        )
+    else:
+        df = pd.read_sql_query(
+            "SELECT id, faculty, year, filename, uploaded_at FROM uploads ORDER BY uploaded_at DESC",
+            conn,
+        )
     conn.close()
     return df
 
 
 def load_records(years: List[int], faculty: Optional[str] = None) -> pd.DataFrame:
     conn = _get_conn()
-    placeholders = ",".join("?" * len(years))
+    ph = PLACEHOLDER
+    placeholders = ",".join([ph] * len(years))
     params = list(years)
     if faculty:
         query = f"""
@@ -191,7 +262,7 @@ def load_records(years: List[int], faculty: Optional[str] = None) -> pd.DataFram
             FROM records r
             JOIN uploads u ON r.upload_id = u.id
             WHERE r.year IN ({placeholders})
-              AND u.faculty = ?
+              AND u.faculty = {ph}
             ORDER BY u.uploaded_at DESC
         """
         params.append(faculty)

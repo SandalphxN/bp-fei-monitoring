@@ -57,27 +57,18 @@ def _area_rank(area: str) -> int:
     return AREA_ORDER.get(area, 99)
 
 def _sort_areas(areas: list) -> list:
-    """Sort areas: FEI first, then Elektrotechnika, then Informatika."""
     return sorted(areas, key=_area_rank)
 
 def _sort_year_labels(year_labels: list) -> list:
-    """Sort year labels ascending: 2022-2023 before 2023-2024."""
     return sorted(year_labels)
 
 def _build_x_labels(year_labels: list, groups: list, show_years: bool) -> list:
-    """
-    Build x-axis labels in the correct order:
-      - groups sorted by area rank (or as provided for programmes)
-      - years sorted ascending
-      - pattern: group_2022 group_2023 group2_2022 group2_2023 ...
-    """
     if show_years:
         yl_sorted = _sort_year_labels(year_labels)
         return [f"{g} ({yl})" for g in groups for yl in yl_sorted]
     return list(groups)
 
 def _get_val(sub: pd.DataFrame, filters: dict) -> Optional[float]:
-    """Get single value from dataframe with multiple column filters."""
     mask = pd.Series([True] * len(sub), index=sub.index)
     for col, val in filters.items():
         mask &= (sub[col] == val)
@@ -102,11 +93,50 @@ def _apply_layout(fig, title, x_title, y_title, legend_title=None,
         kwargs["legend_title"] = legend_title
     fig.update_layout(**kwargs)
 
+
+# ── LINE CHART CONVERSION ─────────────────────────────────────────────────────
+
+def convert_bar_to_line(fig: go.Figure) -> go.Figure:
+    """
+    Converts a bar chart figure to a line chart figure.
+    Each Bar trace becomes a Scatter trace with lines+markers.
+    Layout (title, axes, legend) is preserved.
+    """
+    new_fig = go.Figure()
+
+    for trace in fig.data:
+        if isinstance(trace, go.Bar):
+            new_fig.add_trace(go.Scatter(
+                x=trace.x,
+                y=trace.y,
+                name=trace.name,
+                mode="lines+markers",
+                line=dict(color=trace.marker.color if trace.marker.color else None, width=2),
+                marker=dict(
+                    color=trace.marker.color if trace.marker.color else None,
+                    size=8,
+                ),
+                text=trace.text,
+                hovertemplate=trace.hovertemplate,
+            ))
+        else:
+            new_fig.add_trace(trace)
+
+    new_fig.update_layout(fig.layout)
+    # Line charts don't use barmode
+    new_fig.update_layout(barmode=None)
+
+    return new_fig
+
+
+# ── INDICATOR COMPARISON ──────────────────────────────────────────────────────
+
 def plot_indicator_comparison(
     df: pd.DataFrame,
     indicator_code: str,
     indicator_name: str,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[df["indicator_code"] == indicator_code].copy()
     if df_f.empty:
@@ -153,6 +183,10 @@ def plot_indicator_comparison(
         legend_title="Stupeň",
         x_labels=x_labels,
     )
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_program_comparison(
@@ -162,6 +196,7 @@ def plot_program_comparison(
     selected_areas: list,
     selected_programs: list = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[(df["indicator_code"] == indicator_code) & (df["program"].notna())].copy()
     if selected_areas:
@@ -220,6 +255,10 @@ def plot_program_comparison(
         x_labels=x_labels,
     )
     fig.update_xaxes(tickfont=dict(size=10), automargin=True)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_a(
@@ -228,6 +267,7 @@ def plot_iv_a(
     snapshot_type: str = "ZS",
     show_years: bool = False,
     selected_rocnik: str = "všetci",
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     study_year_val = "1r" if snapshot_type == "LS" else selected_rocnik
     df_f = df[
@@ -276,6 +316,10 @@ def plot_iv_a(
     y_label = "Počet študentov" if snapshot_type == "ZS" else "Počet študentov (1. roč. k 31.3.)"
     _apply_layout(fig, title=title, x_title="Odbor", y_title=y_label, legend_title="Stupeň",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_a_programme(
@@ -284,6 +328,7 @@ def plot_iv_a_programme(
     snapshot_type: str = "ZS",
     selected_programs: list = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_a") &
@@ -372,6 +417,10 @@ def plot_iv_a_programme(
         xaxis_title="Študijný program",
         xaxis_tickangle=_tickangle(x_labels),
     )
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_bc(
@@ -384,6 +433,7 @@ def plot_iv_bc(
     show_programmes: bool = False,
     selected_programmes: Optional[list] = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == indicator_code) &
@@ -458,6 +508,10 @@ def plot_iv_bc(
         height=max(500, 400 + len(groups) * 18),
         x_labels=x_labels,
     )
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_d(
@@ -466,6 +520,7 @@ def plot_iv_d(
     snapshot_type: str = "ZS",
     show_years: bool = False,
     selected_rocnik: str = "všetci",
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_d") &
@@ -530,6 +585,10 @@ def plot_iv_d(
         fig.update_layout(barmode="group", yaxis_title="Podiel zahraničných študentov", legend_title="Stupeň")
 
     _apply_layout(fig, title=title, x_title="Odbor", y_title="Podiel (%)", x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_e(
@@ -537,6 +596,7 @@ def plot_iv_e(
     selected_areas: list,
     snapshot_type: str = "ZS",
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_e") &
@@ -597,6 +657,10 @@ def plot_iv_e(
         fig.update_layout(barmode="group", yaxis_title="Podiel cudzincov", legend_title="Stupeň")
 
     _apply_layout(fig, title=title, x_title="Odbor", y_title="Podiel (%)", x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_f(
@@ -604,6 +668,7 @@ def plot_iv_f(
     selected_areas: list,
     show_years: bool = False,
     selected_programs: list = None,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_f") &
@@ -657,6 +722,10 @@ def plot_iv_f(
     _apply_layout(fig, title=title, x_title=x_title, y_title="Počet študentov",
                   legend_title="Stupeň", height=max(500, 400 + len(groups) * 20),
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_g(
@@ -664,6 +733,7 @@ def plot_iv_g(
     selected_areas: list,
     selected_sub_types: Optional[list] = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_g") &
@@ -711,12 +781,17 @@ def plot_iv_g(
     _apply_layout(fig, title=title, x_title="Odbor",
                   y_title="Počet prípadov (Bc)", legend_title="Typ podvodu",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_h(
     df: pd.DataFrame,
     selected_areas: list,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_h") &
@@ -753,6 +828,10 @@ def plot_iv_h(
 
     _apply_layout(fig, title=title, x_title="Odbor", y_title="Počet konaní", legend_title="Stupeň",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 def plot_iv_i(
@@ -760,6 +839,7 @@ def plot_iv_i(
     selected_areas: list,
     show_years: bool = False,
     selected_programs: Optional[list] = None,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     df_f = df[
         (df["indicator_code"] == "IV_i") &
@@ -836,6 +916,9 @@ def plot_iv_i(
                       y_title="Počet absolventov", legend_title="Stupeň",
                       x_labels=x_labels)
 
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 IV2_A_SUBTYPE_COLORS = {
@@ -861,6 +944,7 @@ def plot_iv2_a(
     selected_sub_types: Optional[list] = None,
     selected_programs: Optional[list] = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     title = "IV-2 a. pomer počtu študentov a učiteľov"
     df_f = df[(df["indicator_code"] == "IV2_a") & (df["area"].isin(selected_areas))].copy()
@@ -920,6 +1004,10 @@ def plot_iv2_a(
         _apply_layout(fig, title=title, x_title="Odbor",
                       y_title="Pomer (študenti / učitelia)", legend_title="Typ",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 IV2_B_SUBTYPE_COLORS = {
@@ -934,6 +1022,7 @@ def plot_iv2_b(
     selected_sub_types: Optional[list] = None,
     selected_programs: Optional[list] = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     title = "IV-2 b. počet záverečných prác vedených vedúcim záverečnej práce"
     COUNTS_SUB = "len počty vrátane DzP"
@@ -1048,11 +1137,31 @@ def plot_iv2_b(
                       y_title="Počet prác" if is_counts else "Prác na vedúceho",
                       legend_title="Typ / Stupeň",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
+_IV2_CDEF_LABEL_SKIP = {
+    "vyslaní / všetci", "ŠP", "odhad",
+    "FEI", "Elektrotechnika", "Informatika",
+}
+
+
+def _iv2_cdef_is_prog(s: str) -> bool:
+    if not s or len(s) > 40:
+        return False
+    if s in _IV2_CDEF_LABEL_SKIP:
+        return False
+    skip_frags = ["Zoznam", "odhadované", "poradenstvo", "zamestnancov so",
+                  "štúdia", "kariérne", "všetkých"]
+    return not any(k in s for k in skip_frags)
+
+
 def _plot_iv2_simple(df, code, title, selected_areas, selected_programs,
-                     show_years, is_pct=False, y_title="Hodnota", deg_list=None):
-    """Generic plot for IV2_c, IV2_d, IV2_e, IV2_f — simple Bc/Ing/PhD bars."""
+                     show_years, is_pct=False, y_title="Hodnota", deg_list=None,
+                     chart_type="Stĺpcový"):
     if deg_list is None:
         deg_list = ["Bc", "Ing", "PhD"]
     data = df[df["indicator_code"] == code].copy()
@@ -1100,28 +1209,33 @@ def _plot_iv2_simple(df, code, title, selected_areas, selected_programs,
                              text=texts, textposition="outside"))
     _apply_layout(fig, title=title, x_title=x_title, y_title=y_title, legend_title="Stupeň",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_iv2_c(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv2_c(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv2_simple(df, "IV2_c",
         "IV-2 c. podiel vyslaných študentov na mobility do zahraničia",
         selected_areas, selected_programs, show_years,
-        is_pct=True, y_title="Podiel (%)")
+        is_pct=True, y_title="Podiel (%)", chart_type=chart_type)
 
-def plot_iv2_d(df, selected_areas, show_years=False):
+def plot_iv2_d(df, selected_areas, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv2_simple(df, "IV2_d",
         "IV-2 d. počet prijatých študentov na mobility zo zahraničia",
-        selected_areas, None, show_years, y_title="Počet")
+        selected_areas, None, show_years, y_title="Počet", chart_type=chart_type)
 
-def plot_iv2_e(df, selected_areas, show_years=False):
+def plot_iv2_e(df, selected_areas, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv2_simple(df, "IV2_e",
         "IV-2 e. rozsah podpory kariérneho poradenstva (odhadované hodiny na študenta)",
-        selected_areas, None, show_years, y_title="Hodiny / študent")
+        selected_areas, None, show_years, y_title="Hodiny / študent", chart_type=chart_type)
 
-def plot_iv2_f(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv2_f(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv2_simple(df, "IV2_f",
         "IV-2 f. počet zamestnancov so zameraním na podporu študentov",
-        selected_areas, selected_programs, show_years, y_title="Počet zamestnancov")
+        selected_areas, selected_programs, show_years, y_title="Počet zamestnancov",
+        chart_type=chart_type)
 
 IV2_G_SUBTYPE_COLORS = {
     "reálne":    "#636EFA",
@@ -1135,6 +1249,7 @@ def plot_iv2_g(
     selected_snapshot: Optional[str] = None,
     selected_programs: Optional[list] = None,
     show_years: bool = False,
+    chart_type: str = "Stĺpcový",
 ) -> go.Figure:
     title = "IV-2 g. podiel študentov zapojených do hodnotenia kvality vzdelávania"
     snapshot = selected_snapshot or "ak.rok"
@@ -1202,9 +1317,13 @@ def plot_iv2_g(
         _apply_layout(fig, title=title, x_title="Odbor",
                       y_title="Podiel zapojených študentov (%)", legend_title="Typ ankety",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_iv2_h(df, selected_areas, selected_snapshot=None, show_years=False):
+def plot_iv2_h(df, selected_areas, selected_snapshot=None, show_years=False, chart_type="Stĺpcový"):
     title = "IV-2 h. miera spokojnosti študentov s kvalitou výučby a učiteľov"
     SNAP_COLORS = {"ak.rok": "#636EFA", "ZS": "#EF553B", "LS": "#00CC96"}
     snapshot = selected_snapshot or "ak.rok"
@@ -1233,9 +1352,13 @@ def plot_iv2_h(df, selected_areas, selected_snapshot=None, show_years=False):
                          marker_color=SNAP_COLORS.get(snapshot, "#636EFA"), name=snapshot))
     _apply_layout(fig, title=title, x_title="Odbor", y_title="Miera spokojnosti (%)",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_iv2_i(df, show_years=False):
+def plot_iv2_i(df, show_years=False, chart_type="Stĺpcový"):
     title = "IV-2 i. miera spokojnosti študentov so špecifickými potrebami"
     data = df[df["indicator_code"] == "IV2_i"].copy()
     if data.empty:
@@ -1254,6 +1377,10 @@ def plot_iv2_i(df, show_years=False):
     fig.add_trace(go.Bar(x=x_vals, y=y_vals, text=texts, textposition="outside", marker_color="#636EFA"))
     _apply_layout(fig, title=title, x_title="Akademický rok" if show_years else "",
                   y_title="Miera spokojnosti (%)", x_labels=x_vals)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 IV2_J_SUBTYPE_COLORS = {
@@ -1263,7 +1390,7 @@ IV2_J_SUBTYPE_COLORS = {
     "študijní poradcovia": "#AB63FA",
 }
 
-def plot_iv2_j(df, selected_sub_types=None, show_years=False):
+def plot_iv2_j(df, selected_sub_types=None, show_years=False, chart_type="Stĺpcový"):
     title = "IV-2 j. počet podaných podnetov študentov"
     data = df[df["indicator_code"] == "IV2_j"].copy()
     if data.empty:
@@ -1297,11 +1424,15 @@ def plot_iv2_j(df, selected_sub_types=None, show_years=False):
     _apply_layout(fig, title=title, x_title="Typ podnetu",
                   y_title="Počet podnetov", legend_title="Stupeň",
                   x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 IV3_A_SUBTYPE_COLORS = {"prof": "#636EFA", "doc": "#EF553B", "OA": "#00CC96", "spolu": "#AB63FA"}
 
-def plot_iv3_a(df, selected_areas, selected_sub_types=None, selected_programs=None, show_years=False):
+def plot_iv3_a(df, selected_areas, selected_sub_types=None, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     title = "IV-3 a. počty učiteľov na ŠP podľa vedecko-pedagogických hodností"
     df_f = df[(df["indicator_code"] == "IV3_a") & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
@@ -1359,10 +1490,13 @@ def plot_iv3_a(df, selected_areas, selected_sub_types=None, selected_programs=No
                              text=texts, textposition="outside", marker_color="#636EFA"))
         _apply_layout(fig, title=title, x_title="Odbor", y_title="Počet učiteľov",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def _plot_iv3_simple_count(df, code, title, selected_areas, selected_programs, show_years):
-    """Generic for IV3_b, IV3_c, IV3_i — simple count per area/programme."""
+def _plot_iv3_simple_count(df, code, title, selected_areas, selected_programs, show_years, chart_type="Stĺpcový"):
     df_f = df[(df["indicator_code"] == code) & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
         return _empty_fig(title)
@@ -1411,24 +1545,28 @@ def _plot_iv3_simple_count(df, code, title, selected_areas, selected_programs, s
         fig.add_trace(go.Bar(x=x_labels, y=y_vals, text=texts, textposition="outside", marker_color="#636EFA", name="počet"))
         _apply_layout(fig, title=title, x_title="Odbor", y_title="Počet učiteľov",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_iv3_b(df, selected_areas, show_years=False):
+def plot_iv3_b(df, selected_areas, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_simple_count(df, "IV3_b",
         "IV-3 b. počty samostatných výskumných pracovníkov na ŠP",
-        selected_areas, None, show_years)
+        selected_areas, None, show_years, chart_type=chart_type)
 
-def plot_iv3_c(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv3_c(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_simple_count(df, "IV3_c",
         "IV-3 c. počet učiteľov s vedecko-pedagogickým titulom (prof., doc.)",
-        selected_areas, selected_programs, show_years)
+        selected_areas, selected_programs, show_years, chart_type=chart_type)
 
-def plot_iv3_i(df, selected_areas, show_years=False):
+def plot_iv3_i(df, selected_areas, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_simple_count(df, "IV3_i",
         "IV-3 i. počet prijatých učiteľov zo zahraničia alebo iných VŠ",
-        selected_areas, None, show_years)
+        selected_areas, None, show_years, chart_type=chart_type)
 
-def plot_iv3_d(df, selected_areas, show_years=False):
+def plot_iv3_d(df, selected_areas, show_years=False, chart_type="Stĺpcový"):
     title = "IV-3 d. podiel učiteľov s PhD./ArtD. (alebo ekvivalentom)"
     df_f = df[(df["indicator_code"] == "IV3_d") & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
@@ -1453,11 +1591,15 @@ def plot_iv3_d(df, selected_areas, show_years=False):
     fig = go.Figure()
     fig.add_trace(go.Bar(x=x_labels, y=y_vals, text=texts, textposition="outside", marker_color="#636EFA"))
     _apply_layout(fig, title=title, x_title="Odbor", y_title="Podiel (%)", x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
 IV3_E_SUBTYPE_COLORS = {"priemer": "#636EFA", "od": "#00CC96", "do": "#EF553B"}
 
-def plot_iv3_e(df, selected_areas, selected_sub_types=None, selected_programs=None, show_years=False):
+def plot_iv3_e(df, selected_areas, selected_sub_types=None, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     title = "IV-3 e. vek učiteľov ŠP zabezpečujúcich profilové predmety"
     df_f = df[(df["indicator_code"] == "IV3_e") & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
@@ -1517,9 +1659,13 @@ def plot_iv3_e(df, selected_areas, selected_sub_types=None, selected_programs=No
                                  marker_color=IV3_E_SUBTYPE_COLORS.get(sub, "#999")))
         _apply_layout(fig, title=title, x_title="Odbor", y_title="Vek (roky)",
                       legend_title="Štatistika", x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def _plot_iv3_ratio(df, code, title, selected_areas, selected_programs=None, show_years=False):
+def _plot_iv3_ratio(df, code, title, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     df_f = df[(df["indicator_code"] == code) & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
         return _empty_fig(title)
@@ -1572,21 +1718,25 @@ def _plot_iv3_ratio(df, code, title, selected_areas, selected_programs=None, sho
         fig.add_trace(go.Bar(x=x_labels, y=y_vals, text=texts, textposition="outside", marker_color="#636EFA"))
         _apply_layout(fig, title=title, x_title="Odbor", y_title="Podiel (%)",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_iv3_f(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv3_f(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_ratio(df, "IV3_f", "IV-3 f. podiel učiteľov – absolventov fakulty",
-                           selected_areas, selected_programs, show_years)
+                           selected_areas, selected_programs, show_years, chart_type=chart_type)
 
-def plot_iv3_g(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv3_g(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_ratio(df, "IV3_g", "IV-3 g. podiel učiteľov, ktorí sú zároveň výskumnými pracovníkmi",
-                           selected_areas, selected_programs, show_years)
+                           selected_areas, selected_programs, show_years, chart_type=chart_type)
 
-def plot_iv3_h(df, selected_areas, selected_programs=None, show_years=False):
+def plot_iv3_h(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     return _plot_iv3_ratio(df, "IV3_h", "IV-3 h. podiel učiteľov s praxou v relevantnej oblasti mimo akademickej sféry",
-                           selected_areas, selected_programs, show_years)
+                           selected_areas, selected_programs, show_years, chart_type=chart_type)
 
-def plot_iv3_j(df, selected_areas, selected_sub_type="vyslaní", selected_programs=None, show_years=False):
+def plot_iv3_j(df, selected_areas, selected_sub_type="vyslaní", selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     is_pct = (selected_sub_type == "vyslaní")
     title = "IV-3 j. podiel vyslaných učiteľov" if is_pct else "IV-3 j. počty vyslaných učiteľov (súčet)"
     df_f = df[(df["indicator_code"] == "IV3_j") & (df["area"].isin(selected_areas)) & (df["sub_type"] == selected_sub_type)].copy()
@@ -1647,9 +1797,13 @@ def plot_iv3_j(df, selected_areas, selected_sub_type="vyslaní", selected_progra
         _apply_layout(fig, title=title, x_title="Odbor",
                       y_title="Podiel (%)" if is_pct else "Počet učiteľov",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
 
-def plot_v5_a(df, selected_areas, selected_programs=None, show_years=False):
+def plot_v5_a(df, selected_areas, selected_programs=None, show_years=False, chart_type="Stĺpcový"):
     title = "V-a. miera uplatniteľnosti absolventov TUKE/ŠP"
     df_f = df[(df["indicator_code"] == "V5_a") & (df["area"].isin(selected_areas))].copy()
     if df_f.empty:
@@ -1710,4 +1864,8 @@ def plot_v5_a(df, selected_areas, selected_programs=None, show_years=False):
         _apply_layout(fig, title=title, x_title="Odbor",
                       y_title="Miera uplatniteľnosti (%)", legend_title="Stupeň",
                       x_labels=x_labels)
+
+    if chart_type == "Čiarový":
+        fig = convert_bar_to_line(fig)
+
     return fig
