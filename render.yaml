@@ -2,6 +2,7 @@ services:
   - type: web
     name: bp-fei-monitoring
     runtime: python
+    plan: free
     buildCommand: pip install -r requirements.txt
     startCommand: streamlit run app.py --server.port $PORT --server.address 0.0.0.0
     envVars:
@@ -9,11 +10,7 @@ services:
         fromDatabase:
           name: bp-fei-db
           property: connectionString
-      - key: PYTHON_VERSION
-        value: 3.11.0
 
 databases:
   - name: bp-fei-db
-    databaseName: fei_monitoring
-    user: fei_user
     plan: free
