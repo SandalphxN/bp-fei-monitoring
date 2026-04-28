@@ -3,8 +3,6 @@ from typing import List, Optional
 
 import pandas as pd
 
-# ── Підключення: PostgreSQL (Render) або SQLite (локально) ────────────────────
-
 DATABASE_URL = os.environ.get("DATABASE_URL")
 
 if DATABASE_URL:
@@ -12,7 +10,6 @@ if DATABASE_URL:
     import psycopg2.extras
 
     def _get_conn():
-        # Render дає URL з "postgres://", psycopg2 потребує "postgresql://"
         url = DATABASE_URL.replace("postgres://", "postgresql://", 1)
         return psycopg2.connect(url)
 
@@ -34,7 +31,6 @@ else:
 
 
 def _execute(conn, sql: str, params=()) -> None:
-    """Виконати SQL без результату."""
     sql = sql.replace("?", PLACEHOLDER)
     conn.cursor().execute(sql, params)
 
@@ -49,9 +45,6 @@ def _fetchall(conn, sql: str, params=()):
     cur = conn.cursor()
     cur.execute(sql, params)
     return cur.fetchall()
-
-
-# ── Ініціалізація схеми ───────────────────────────────────────────────────────
 
 def init_db():
     conn = _get_conn()
@@ -135,9 +128,6 @@ def init_db():
 
     conn.commit()
     conn.close()
-
-
-# ── CRUD operácie ─────────────────────────────────────────────────────────────
 
 def insert_upload(faculty: str, year: int, filename: str, content: bytes) -> int:
     conn = _get_conn()

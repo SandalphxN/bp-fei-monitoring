@@ -1018,17 +1018,13 @@ def main():
     # ── GLOBAL CHART TYPE SELECTOR ────────────────────────────────────────────
     st.sidebar.markdown("---")
     st.sidebar.subheader("Typ grafu")
-    if multiple_years:
-        chart_type = st.sidebar.radio(
-            "Zobrazenie:",
-            ["Stĺpcový", "Čiarový"],
-            index=0,
-            key="global_chart_type",
-            help="Stĺpcový: klasické stĺpce. Čiarový: trendové línie — x-os = roky, každá línia = odbor/program.",
-        )
-    else:
-        chart_type = "Stĺpcový"
-        st.sidebar.caption("💡 Čiarový graf je dostupný pri výbere 2+ rokov.")
+    chart_type = st.sidebar.radio(
+        "Zobrazenie:",
+        ["Stĺpcový", "Čiarový"],
+        index=0,
+        key="global_chart_type",
+        help="Stĺpcový: klasické stĺpce. Čiarový: trendové línie — x-os = roky, každá línia = odbor/program.",
+    )
     # ─────────────────────────────────────────────────────────────────────────
 
     db_code = db_code_map.get(selected_indicator, selected_indicator)
