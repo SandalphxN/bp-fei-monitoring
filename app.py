@@ -1018,13 +1018,32 @@ def main():
     # ── GLOBAL CHART TYPE SELECTOR ────────────────────────────────────────────
     st.sidebar.markdown("---")
     st.sidebar.subheader("Typ grafu")
-    chart_type = st.sidebar.radio(
-        "Zobrazenie:",
-        ["Stĺpcový", "Čiarový"],
-        index=0,
-        key="global_chart_type",
-        help="Stĺpcový: klasické stĺpce. Čiarový: trendové línie — x-os = roky, každá línia = odbor/program.",
+    # Čiarový má zmysel len keď je vybraná JEDNA položka
+    _one_area = len(selected_areas) == 1
+    _selected_programs_count = sum(
+        len(v) if isinstance(v, list) else 0
+        for k in st.session_state
+        if k.endswith("_programs") or k.endswith("_progs")
+        for v in [st.session_state.get(k, [])]
     )
+    _all_progs = any(
+        st.session_state.get(k) is True
+        for k in st.session_state
+        if k.endswith("_all_progs") or k.endswith("_all_prog")
+    )
+    _line_allowed = _one_area and not _all_progs and _selected_programs_count <= 1
+
+    if _line_allowed:
+        chart_type = st.sidebar.radio(
+            "Zobrazenie:",
+            ["Stĺpcový", "Čiarový"],
+            index=0,
+            key="global_chart_type",
+            help="Čiarový graf sleduje vývoj jednej položky v čase.",
+        )
+    else:
+        chart_type = "Stĺpcový"
+        st.sidebar.caption("💡 Čiarový graf je dostupný pri výbere jedného odboru alebo jedného programu.")
     # ─────────────────────────────────────────────────────────────────────────
 
     db_code = db_code_map.get(selected_indicator, selected_indicator)
