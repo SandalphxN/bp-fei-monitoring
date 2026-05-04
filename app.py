@@ -1197,17 +1197,25 @@ def main():
         df_t = df_filtered[df_filtered["indicator_code"] == db_code].copy()
         df_t["formatted_value"] = df_t.apply(fmt_val, axis=1)
 
-        _any_all_progs = any(
+        _all_progs_checked = any(
             st.session_state.get(k) is True
             for k in st.session_state
             if k.endswith("_all_progs") or k.endswith("_all_prog")
         )
-        _any_progs_list = any(
-            bool(st.session_state.get(k))
-            for k in st.session_state
-            if k.endswith("_programs") or k.endswith("_progs")
-        )
-        if not _any_all_progs and not _any_progs_list:
+        _selected_progs = []
+        if not _all_progs_checked:
+            for k in st.session_state:
+                if k.endswith("_programs") or k.endswith("_progs"):
+                    v = st.session_state.get(k)
+                    if isinstance(v, list) and len(v) > 0:
+                        _selected_progs.extend(v)
+            _selected_progs = list(dict.fromkeys(_selected_progs))
+
+        if _all_progs_checked:
+            pass
+        elif _selected_progs:
+            df_t = df_t[df_t["program"].isin(_selected_progs)]
+        else:
             df_t = df_t[df_t["program"].isna()]
 
         _AREA_RANK = {"FEI": 0, "Elektrotechnika": 1, "Informatika": 2}
