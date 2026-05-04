@@ -103,6 +103,35 @@ def _ldap_cfg_from_settings(settings: dict) -> LdapConfig | None:
     )
 
 
+# ── ХЕЛПЕР ДЛЯ ФІЛЬТРІВ ТАБЛИЦІ ─────────────────────────────────────────────
+
+def _set_table_filters(
+    *,
+    snapshot_type: str | None = None,
+    study_year: str | None = None,
+    sub_types: list | None = None,
+    programs: list | None = None,
+):
+    """Зберігає активні фільтри графу, щоб tab2 міг їх використати."""
+    st.session_state["_table_filters"] = {
+        "snapshot_type": snapshot_type,
+        "study_year": study_year,
+        "sub_types": sub_types,
+        "programs": programs,
+    }
+
+
+def _get_table_filters() -> dict:
+    return st.session_state.get("_table_filters", {
+        "snapshot_type": None,
+        "study_year": None,
+        "sub_types": None,
+        "programs": None,
+    })
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+
 def auth_block(settings: dict) -> tuple[str, str | None]:
     if "auth_user" not in st.session_state:
         st.session_state["auth_user"] = None
@@ -266,6 +295,11 @@ def _render_iv2_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool, 
         )
         selected_sub = "Bc a Ing k 31.10" if snap_choice == "Začiatok ZS" else "Bc 1.roč k 31.3"
 
+    _set_table_filters(
+        sub_types=[selected_sub],
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv2_a(
         df, selected_areas,
         selected_sub_types=[selected_sub],
@@ -308,6 +342,11 @@ def _render_iv2_b(df: pd.DataFrame, selected_areas: list, multiple_years: bool, 
                     "Študijné programy:", programs_all, default=[], key="iv2_b_programs"
                 )
 
+    _set_table_filters(
+        sub_types=selected_subs or None,
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv2_b(
         df, selected_areas,
         selected_sub_types=selected_subs or None,
@@ -332,16 +371,21 @@ def _render_iv2_c(df, selected_areas, multiple_years, chart_type):
         with col2:
             selected_programs = programs_all if sel_all else st.multiselect(
                 "Študijné programy:", programs_all, default=[], key="iv2_c_programs")
+
+    _set_table_filters(programs=selected_programs or None)
+
     fig = plot_iv2_c(df, selected_areas, selected_programs or None, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_iv2_d(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv2_d(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
 
 def _render_iv2_e(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv2_e(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -360,6 +404,9 @@ def _render_iv2_f(df, selected_areas, multiple_years, chart_type):
         with col2:
             selected_programs = programs_all if sel_all else st.multiselect(
                 "Študijné programy:", programs_all, default=[], key="iv2_f_programs")
+
+    _set_table_filters(programs=selected_programs or None)
+
     fig = plot_iv2_f(df, selected_areas, selected_programs or None, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -400,6 +447,12 @@ def _render_iv2_g(df, selected_areas, multiple_years, chart_type):
                     "Študijné programy:", programs_all, default=[], key="iv2_g_programs"
                 )
 
+    _set_table_filters(
+        snapshot_type=snap_choice,
+        sub_types=selected_subs or None,
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv2_g(
         df, selected_areas,
         selected_sub_types=selected_subs or None,
@@ -416,6 +469,7 @@ def _render_iv2_h(df, selected_areas, multiple_years, chart_type):
         "Termín:", ["ak.rok", "ZS", "LS"],
         horizontal=True, key="iv2_h_snap"
     )
+    _set_table_filters(snapshot_type=snap_choice)
     fig = plot_iv2_h(df, selected_areas,
                      selected_snapshot=snap_choice,
                      show_years=multiple_years,
@@ -424,6 +478,7 @@ def _render_iv2_h(df, selected_areas, multiple_years, chart_type):
 
 
 def _render_iv2_i(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv2_i(df, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -436,6 +491,7 @@ def _render_iv2_j(df, selected_areas, multiple_years, chart_type):
         "Typ podnetu:", available_subs,
         default=available_subs, key="iv2_j_subtypes"
     )
+    _set_table_filters(sub_types=selected_subs or None)
     fig = plot_iv2_j(df,
                      selected_sub_types=selected_subs or None,
                      show_years=multiple_years,
@@ -477,6 +533,11 @@ def _render_iv3_a(df, selected_areas, multiple_years, chart_type):
         selected_subs = st.multiselect(
             "Hodnosť:", available_subs, default=available_subs, key="iv3_a_subtypes")
 
+    _set_table_filters(
+        sub_types=selected_subs,
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv3_a(df, selected_areas,
                      selected_sub_types=selected_subs,
                      selected_programs=selected_programs or None,
@@ -486,6 +547,7 @@ def _render_iv3_a(df, selected_areas, multiple_years, chart_type):
 
 
 def _render_iv3_b(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv3_b(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -511,6 +573,8 @@ def _render_iv3_c(df, selected_areas, multiple_years, chart_type):
                 selected_programs = st.multiselect(
                     "Študijné programy:", programs_all, default=[], key="iv3_c_programs")
 
+    _set_table_filters(programs=selected_programs or None)
+
     fig = plot_iv3_c(df, selected_areas,
                      selected_programs=selected_programs or None,
                      show_years=multiple_years,
@@ -519,6 +583,7 @@ def _render_iv3_c(df, selected_areas, multiple_years, chart_type):
 
 
 def _render_iv3_d(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv3_d(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -552,6 +617,11 @@ def _render_iv3_e(df, selected_areas, multiple_years, chart_type):
     selected_subs = st.multiselect(
         "Zobraziť:", available_subs, default=available_subs, key="iv3_e_subtypes")
 
+    _set_table_filters(
+        sub_types=selected_subs or None,
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv3_e(df, selected_areas,
                      selected_sub_types=selected_subs or None,
                      selected_programs=selected_programs or None,
@@ -581,6 +651,8 @@ def _render_iv3_ratio(df, selected_areas, multiple_years, code, plot_func, chart
                 selected_programs = st.multiselect(
                     "Študijné programy:", programs_all, default=[], key=f"{code}_programs")
 
+    _set_table_filters(programs=selected_programs or None)
+
     fig = plot_func(df, selected_areas,
                     selected_programs=selected_programs or None,
                     show_years=multiple_years,
@@ -601,6 +673,7 @@ def _render_iv3_h(df, selected_areas, multiple_years, chart_type):
 
 
 def _render_iv3_i(df, selected_areas, multiple_years, chart_type):
+    _set_table_filters()
     fig = plot_iv3_i(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -633,6 +706,11 @@ def _render_iv3_j(df, selected_areas, multiple_years, chart_type):
                 selected_programs = st.multiselect(
                     "Študijné programy:", programs_all, default=[], key="iv3_j_programs")
 
+    _set_table_filters(
+        sub_types=[sub_choice],
+        programs=selected_programs or None,
+    )
+
     fig = plot_iv3_j(df, selected_areas,
                      selected_sub_type=sub_choice,
                      selected_programs=selected_programs or None,
@@ -661,6 +739,8 @@ def _render_v5_a(df, selected_areas, multiple_years, chart_type):
             else:
                 selected_programs = st.multiselect(
                     "Študijné programy:", programs_all, default=[], key="v5_a_programs")
+
+    _set_table_filters(programs=selected_programs or None)
 
     fig = plot_v5_a(df, selected_areas,
                     selected_programs=selected_programs or None,
@@ -702,6 +782,20 @@ def _render_iv_a(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
                     selected_programs = st.multiselect(
                         "Študijné programy:", programs_all, default=[], key="iv_a_programs"
                     )
+
+    # study_year pre tabuľku
+    if snapshot_type == "LS":
+        study_year_filter = "1r"
+    elif selected_rocnik == "všetci":
+        study_year_filter = "všetci"
+    else:
+        study_year_filter = selected_rocnik
+
+    _set_table_filters(
+        snapshot_type=snapshot_type,
+        study_year=study_year_filter,
+        programs=selected_programs or None,
+    )
 
     if selected_programs:
         fig = plot_iv_a_programme(
@@ -748,6 +842,11 @@ def _render_iv_bc(df: pd.DataFrame, ind_code: str, ind_name: str,
             key=f"{ind_code}_subtype",
         )
 
+    _set_table_filters(
+        snapshot_type=semester,
+        sub_types=selected_sub or None,
+    )
+
     fig = plot_iv_bc(
         df,
         ind_code,
@@ -777,6 +876,15 @@ def _render_iv_d(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
         )
         snapshot_type = "ZS" if snap_choice == "Začiatok ZS" else "LS"
 
+    study_year_filter = "1r" if snapshot_type == "LS" else (
+        "všetci" if selected_rocnik == "všetci" else selected_rocnik
+    )
+
+    _set_table_filters(
+        snapshot_type=snapshot_type,
+        study_year=study_year_filter,
+    )
+
     fig = plot_iv_d(df, selected_areas, snapshot_type=snapshot_type,
                     show_years=multiple_years, selected_rocnik=selected_rocnik,
                     chart_type=chart_type)
@@ -793,6 +901,14 @@ def _render_iv_e(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
             key="iv_e_snap"
         )
     snapshot_type = "ZS" if snap_choice == "Začiatok ZS" else "LS"
+
+    study_year_filter = "1r" if snapshot_type == "LS" else "všetci"
+
+    _set_table_filters(
+        snapshot_type=snapshot_type,
+        study_year=study_year_filter,
+    )
+
     fig = plot_iv_e(df, selected_areas, snapshot_type=snapshot_type,
                     show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
@@ -814,6 +930,9 @@ def _render_iv_f(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
                     selected_programs = st.multiselect(
                         "Študijné programy:", programs_all, default=[], key="iv_f_programs"
                     )
+
+    _set_table_filters(programs=selected_programs or None)
+
     fig = plot_iv_f(df, selected_areas,
                     show_years=multiple_years,
                     selected_programs=selected_programs or None,
@@ -840,6 +959,8 @@ def _render_iv_g(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
         key="iv_g_subtype",
     )
 
+    _set_table_filters(sub_types=selected_sub or None)
+
     fig = plot_iv_g(
         df, selected_areas,
         selected_sub_types=selected_sub or None,
@@ -850,6 +971,7 @@ def _render_iv_g(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
 
 
 def _render_iv_h(df: pd.DataFrame, selected_areas: list, multiple_years: bool, chart_type: str):
+    _set_table_filters()
     fig = plot_iv_h(df, selected_areas, show_years=multiple_years, chart_type=chart_type)
     st.plotly_chart(fig, use_container_width=True)
 
@@ -872,6 +994,8 @@ def _render_iv_i(df: pd.DataFrame, selected_areas: list, multiple_years: bool, c
                     selected_programs = st.multiselect(
                         "Študijné programy:", programs_all, default=[], key="iv_i_programs"
                     )
+
+    _set_table_filters(programs=selected_programs or None)
 
     fig = plot_iv_i(
         df, selected_areas,
@@ -1018,7 +1142,6 @@ def main():
     # ── GLOBAL CHART TYPE SELECTOR ────────────────────────────────────────────
     st.sidebar.markdown("---")
     st.sidebar.subheader("Typ grafu")
-    # Čiarový má zmysel len keď je vybraná JEDNA položka
     _one_area = len(selected_areas) == 1
     _selected_programs_count = sum(
         len(v) if isinstance(v, list) else 0
@@ -1157,6 +1280,8 @@ def main():
                                 key="iii_programs"
                             )
 
+            _set_table_filters(programs=iii_selected_programs or None)
+
             df_iii = df_filtered.copy()
             if iii_selected_programs:
                 df_iii = df_iii[df_iii["program"].isin(iii_selected_programs)]
@@ -1188,36 +1313,50 @@ def main():
                 )
                 st.plotly_chart(fig, use_container_width=True)
 
+    # ── TAB 2 — TABUĽKA ──────────────────────────────────────────────────────
     with tab2:
         def fmt_val(row):
             if pd.isna(row["value"]):
                 return "-"
             return f"{row['value'] * 100:.2f}%" if row["is_percentage"] else f"{row['value']:.0f}"
 
+        # Základ — všetky riadky pre daný ukazovateľ a vybrané odbory
         df_t = df_filtered[df_filtered["indicator_code"] == db_code].copy()
         df_t["formatted_value"] = df_t.apply(fmt_val, axis=1)
 
-        _all_progs_checked = any(
-            st.session_state.get(k) is True
-            for k in st.session_state
-            if k.endswith("_all_progs") or k.endswith("_all_prog")
-        )
-        _selected_progs = []
-        if not _all_progs_checked:
-            for k in st.session_state:
-                if k.endswith("_programs") or k.endswith("_progs"):
-                    v = st.session_state.get(k)
-                    if isinstance(v, list) and len(v) > 0:
-                        _selected_progs.extend(v)
-            _selected_progs = list(dict.fromkeys(_selected_progs))
+        # Načítaj fíltre nastavené v tab1
+        tf = _get_table_filters()
+        tf_snapshot  = tf.get("snapshot_type")
+        tf_study_year = tf.get("study_year")
+        tf_sub_types  = tf.get("sub_types")
+        tf_programs   = tf.get("programs")
 
-        if _all_progs_checked:
-            pass
-        elif _selected_progs:
-            df_t = df_t[df_t["program"].isin(_selected_progs)]
+        # 1. Filter podľa programov
+        if tf_programs:
+            df_t = df_t[df_t["program"].isin(tf_programs)]
         else:
-            df_t = df_t[df_t["program"].isna()]
+            # Ak nie sú programy vybrané, zobrazuj len area-level riadky
+            # (program IS NULL), okrem indikátorov kde programy nie sú relevantné
+            has_program_data = df_t["program"].notna().any()
+            if has_program_data and not tf_programs:
+                df_t = df_t[df_t["program"].isna()]
 
+        # 2. Filter podľa snapshot_type (ZS/LS/ak.rok)
+        if tf_snapshot and "snapshot_type" in df_t.columns:
+            mask_snap = df_t["snapshot_type"].isna() | (df_t["snapshot_type"] == tf_snapshot)
+            df_t = df_t[mask_snap]
+
+        # 3. Filter podľa study_year (ročník)
+        if tf_study_year and "study_year" in df_t.columns:
+            mask_sy = df_t["study_year"].isna() | (df_t["study_year"] == tf_study_year)
+            df_t = df_t[mask_sy]
+
+        # 4. Filter podľa sub_type
+        if tf_sub_types and "sub_type" in df_t.columns:
+            mask_st = df_t["sub_type"].isna() | (df_t["sub_type"].isin(tf_sub_types))
+            df_t = df_t[mask_st]
+
+        # Zoradenie
         _AREA_RANK = {"FEI": 0, "Elektrotechnika": 1, "Informatika": 2}
         df_t["_area_rank"] = df_t["area"].map(_AREA_RANK).fillna(99)
         df_t["_prog_is_prog"] = df_t["program"].notna().astype(int)
